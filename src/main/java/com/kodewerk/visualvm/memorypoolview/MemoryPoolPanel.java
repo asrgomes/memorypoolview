@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2013, Kirk Pepperdine.
+ * Copyright (c) 2011-2026, Kirk Pepperdine.
  *
  * The contents of this file are subject to the terms of the
  * Common Development and Distribution License (the "License").
@@ -17,61 +17,61 @@
  */
 package com.kodewerk.visualvm.memorypoolview;
 
-import com.sun.tools.visualvm.charts.ChartFactory;
-import com.sun.tools.visualvm.charts.SimpleXYChartDescriptor;
-import com.sun.tools.visualvm.charts.SimpleXYChartSupport;
+import org.graalvm.visualvm.charts.ChartFactory;
+import org.graalvm.visualvm.charts.SimpleXYChartDescriptor;
+import org.graalvm.visualvm.charts.SimpleXYChartSupport;
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.JPanel;
+import java.awt.BorderLayout;
 
-/**
- * @author kirk
- */
+/// Swing chart panel for a single memory pool.
 public class MemoryPoolPanel extends JPanel implements MemoryPoolModelListener {
-    private final static long ONE_MEGABYTE_SIZE = 1048576;
+    private static final long ONE_MEGABYTE_SIZE = 1048576;
 
-    private SimpleXYChartSupport chart;
+    private final SimpleXYChartSupport chart;
 
+    /// Creates a chart with committed and used memory series.
     public MemoryPoolPanel() {
-        this( new String[]{ "Memory Pool Size", "Memory Pool Used" }, new String[]{"Size", "Used", "Max"});
+        this(new String[]{"Memory Pool Size", "Memory Pool Used"}, new String[]{"Size", "Used", "Max"});
     }
-    
+
+    /// Creates a chart with an additional line item and details field.
     public MemoryPoolPanel( String additionalLineItem, String additionalDetails) {
-        this( new String[]{ "Memory Pool Size", "Memory Pool Used", additionalLineItem }, new String[]{"Size", "Used", "Max", additionalDetails});                
+        this(new String[]{"Memory Pool Size", "Memory Pool Used", additionalLineItem}, new String[]{"Size", "Used", "Max", additionalDetails});
     }
-    
+
     MemoryPoolPanel( String[] lineItems, String[] details) {
         setLayout(new BorderLayout());
-        SimpleXYChartDescriptor description = SimpleXYChartDescriptor.bytes(ONE_MEGABYTE_SIZE, false, 1000);
+        var description = SimpleXYChartDescriptor.bytes(ONE_MEGABYTE_SIZE, false, 1000);
 
-        for ( String lineItem : lineItems)
-            description.addLineItems( lineItem);
+        for (var lineItem : lineItems) {
+            description.addLineItems(lineItem);
+        }
 
-        description.setDetailsItems( details);
-        
+        description.setDetailsItems(details);
         chart = ChartFactory.createSimpleXYChart(description);
         add(chart.getChart(), BorderLayout.CENTER);
     }
-    
-    public String formatBytes( long value) {
+
+    /// Formats a byte count using the same units as the chart.
+    public String formatBytes(long value) {
         return chart.formatBytes(value);
     }
-    
-    protected void updateChart( long[] values, String[] details) {
-        chart.addValues( System.currentTimeMillis(), values);
+
+    protected void updateChart(long[] values, String[] details) {
+        chart.addValues(System.currentTimeMillis(), values);
         chart.updateDetails(details);
     }
- 
+
+    /// Adds the latest memory-pool sample to the chart.
     @Override
     public void memoryPoolUpdated(MemoryPoolModel model) {
-        long[] dataPoints = new long[2];
-        dataPoints[0] = model.getCommitted();
-        dataPoints[1] = model.getUsed();
-
-        String[] details = new String[3];
-        details[0] = formatBytes(model.getCommitted());
-        details[1] = formatBytes(model.getUsed());
-        details[2] = formatBytes(model.getMax());
-        updateChart( dataPoints, details);
+        var dataPoints = new long[]{model.getCommitted(), model.getUsed()};
+        var details = new String[]{
+                formatBytes(model.getCommitted()),
+                formatBytes(model.getUsed()),
+                formatBytes(model.getMax())
+        };
+        updateChart(dataPoints, details);
     }
 }

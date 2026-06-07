@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2013, Kirk Pepperdine.
+ * Copyright (c) 2011-2026, Kirk Pepperdine.
  *
  * The contents of this file are subject to the terms of the
  * Common Development and Distribution License (the "License").
@@ -18,33 +18,35 @@
 
 package com.kodewerk.visualvm.memorypoolview;
 
-import com.sun.tools.visualvm.application.Application;
-import com.sun.tools.visualvm.core.ui.DataSourceView;
-import com.sun.tools.visualvm.core.ui.DataSourceViewProvider;
-import com.sun.tools.visualvm.core.ui.DataSourceViewsManager;
-import com.sun.tools.visualvm.tools.jmx.JmxModel;
-import com.sun.tools.visualvm.tools.jmx.JmxModelFactory;
+import org.graalvm.visualvm.application.Application;
+import org.graalvm.visualvm.core.ui.DataSourceView;
+import org.graalvm.visualvm.core.ui.DataSourceViewProvider;
+import org.graalvm.visualvm.core.ui.DataSourceViewsManager;
+import org.graalvm.visualvm.tools.jmx.JmxModel;
+import org.graalvm.visualvm.tools.jmx.JmxModelFactory;
 import org.openide.util.Exceptions;
 
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
 import java.io.IOException;
-import java.util.Set;
 
-/**
- * @author kirk
- */
+/// Registers the Memory Pools view for connected VisualVM applications.
 class MemoryPoolViewProvider extends DataSourceViewProvider<Application> {
 
-    private static DataSourceViewProvider<Application> instance = new MemoryPoolViewProvider();
+    private static final DataSourceViewProvider<Application> INSTANCE = new MemoryPoolViewProvider();
+    private static final ObjectName MEMORY_POOL_PATTERN = createMemoryPoolPattern();
 
+    /// Returns whether the application has a connected JMX model with memory-pool MBeans.
     @Override
     public boolean supportsViewFor(final Application application) {
-        JmxModel jmx = JmxModelFactory.getJmxModelFor(application);
+        var jmx = JmxModelFactory.getJmxModelFor(application);
         if (jmx != null && jmx.getConnectionState() == JmxModel.ConnectionState.CONNECTED) {
             MBeanServerConnection connection = jmx.getMBeanServerConnection();
+            if (connection == null) {
+                return false;
+            }
             try {
-                Set<ObjectName> objectNames = connection.queryNames(ObjectName.WILDCARD, null);
+                var objectNames = connection.queryNames(MEMORY_POOL_PATTERN, null);
                 return !objectNames.isEmpty();
             } catch (IOException e) {
                 Exceptions.printStackTrace(e);
@@ -53,6 +55,7 @@ class MemoryPoolViewProvider extends DataSourceViewProvider<Application> {
         return false;
     }
 
+    /// Creates the view instance for the selected application.
     @Override
     public synchronized DataSourceView createView(final Application application) {
         return new MemoryPoolView(application);
@@ -60,10 +63,18 @@ class MemoryPoolViewProvider extends DataSourceViewProvider<Application> {
     }
 
     static void initialize() {
-        DataSourceViewsManager.sharedInstance().addViewProvider(instance, Application.class);
+        DataSourceViewsManager.sharedInstance().addViewProvider(INSTANCE, Application.class);
     }
 
     static void unregister() {
-        DataSourceViewsManager.sharedInstance().removeViewProvider(instance);
+        DataSourceViewsManager.sharedInstance().removeViewProvider(INSTANCE);
+    }
+
+    private static ObjectName createMemoryPoolPattern() {
+        try {
+            return new ObjectName("java.lang:type=MemoryPool,name=*");
+        } catch (Exception e) {
+            return ObjectName.WILDCARD;
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2013, Kirk Pepperdine.
+ * Copyright (c) 2011-2026, Kirk Pepperdine.
  *
  * The contents of this file are subject to the terms of the
  * Common Development and Distribution License (the "License").
@@ -18,6 +18,8 @@
 
 package com.kodewerk.visualvm.memorypoolview.gc;
 
+/// Listener notified after a garbage-collector model refreshes.
 public interface GarbageCollectorModelListener {
-    public void garbageCollectorUpdated(GarbageCollectionModel model);
+    /// Handles a new garbage-collector sample.
+    void garbageCollectorUpdated(GarbageCollectionModel model);
 }

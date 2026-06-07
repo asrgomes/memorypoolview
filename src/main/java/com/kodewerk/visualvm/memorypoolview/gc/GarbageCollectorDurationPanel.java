@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2013, Kirk Pepperdine.
+ * Copyright (c) 2011-2026, Kirk Pepperdine.
  *
  * The contents of this file are subject to the terms of the
  * Common Development and Distribution License (the "License").
@@ -18,43 +18,53 @@
 
 package com.kodewerk.visualvm.memorypoolview.gc;
 
-import java.awt.*;
-import javax.swing.*;
-import com.sun.tools.visualvm.charts.ChartFactory;
-import com.sun.tools.visualvm.charts.SimpleXYChartDescriptor;
-import com.sun.tools.visualvm.charts.SimpleXYChartSupport;
+import org.graalvm.visualvm.charts.ChartFactory;
+import org.graalvm.visualvm.charts.SimpleXYChartDescriptor;
+import org.graalvm.visualvm.charts.SimpleXYChartSupport;
 
+import java.awt.BorderLayout;
+import javax.swing.JPanel;
+
+/// Swing chart panel for the latest duration of one garbage collector.
 public class GarbageCollectorDurationPanel extends JPanel implements GarbageCollectorModelListener {
-    public final static long ONE_MEGABYTE_SIZE = 1048576;
+    static final long ONE_MEGABYTE_SIZE = 1048576;
 
-    private SimpleXYChartSupport chart;
+    private final SimpleXYChartSupport chart;
 
+    /// Creates a chart with last duration, collection count, and total duration details.
     public GarbageCollectorDurationPanel() {
-        setLayout(new BorderLayout());
-        SimpleXYChartDescriptor description = SimpleXYChartDescriptor.decimal(ONE_MEGABYTE_SIZE, false, 1000);
-        
-        description.addLineItems("Last GC duration");
-        description.setDetailsItems(new String[]{"Last duration", "Number of collections", "Total time in GC"});
-        
-        init( description);
+        this(createDurationDescriptor());
     }
-    
-    public void init( SimpleXYChartDescriptor description) {
+
+    protected GarbageCollectorDurationPanel(SimpleXYChartDescriptor description) {
+        setLayout(new BorderLayout());
         chart = ChartFactory.createSimpleXYChart(description);
         add(chart.getChart(), BorderLayout.CENTER);
     }
-    
-    protected SimpleXYChartSupport getChart() { return chart; }
 
+    private static SimpleXYChartDescriptor createDurationDescriptor() {
+        var description = SimpleXYChartDescriptor.decimal(ONE_MEGABYTE_SIZE, false, 1000);
+
+        description.addLineItems("Last GC duration");
+        description.setDetailsItems(new String[]{"Last duration", "Number of collections", "Total time in GC"});
+        return description;
+    }
+
+    protected SimpleXYChartSupport getChart() {
+        return chart;
+    }
+
+    /// Adds the latest garbage-collection duration sample to the chart.
+    @Override
     public void garbageCollectorUpdated(GarbageCollectionModel model) {
-        long[] dataPoints = new long[1];
-        dataPoints[0] = model.getLastDuration();
+        var dataPoints = new long[]{model.getLastDuration()};
         chart.addValues(System.currentTimeMillis(), dataPoints);
 
-        String[] details = new String[3];
-        details[0] = Collection.formatNumber(model.getLastDuration()) + " ms";
-        details[1] = String.valueOf(model.getCount());
-        details[2] = Collection.formatNumber(model.getTotalDuration()) + " ms";
+        var details = new String[]{
+                Collection.formatNumber(model.getLastDuration()) + " ms",
+                String.valueOf(model.getCount()),
+                Collection.formatNumber(model.getTotalDuration()) + " ms"
+        };
         getChart().updateDetails(details);
     }
 }

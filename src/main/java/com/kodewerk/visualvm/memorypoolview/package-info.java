@@ -15,31 +15,7 @@
  * fields enclosed by brackets "[]" replaced with your own identifying
  * information: Portions Copyright [yyyy] [name of copyright owner]
  */
+@NullMarked
 package com.kodewerk.visualvm.memorypoolview;
 
-import com.kodewerk.visualvm.memorypoolview.gc.GCViewProvider;
-import org.openide.modules.ModuleInstall;
-
-/// Registers and unregisters this plugin's VisualVM views during module lifecycle events.
-public class Installer extends ModuleInstall {
-
-    /// Validates the module installation.
-    @Override
-    public void validate() throws IllegalStateException {
-    }
-
-    /// Registers the Memory Pools and Garbage Collector views after module startup.
-    @Override
-    public void restored() {
-        MemoryPoolViewProvider.initialize();
-        GCViewProvider.initialize();
-    }
-
-    /// Unregisters this plugin's VisualVM views during module removal.
-    @Override
-    public void uninstalled() {
-        MemoryPoolViewProvider.unregister();
-        GCViewProvider.unregister();
-    }
-
-}
+import org.jspecify.annotations.NullMarked;

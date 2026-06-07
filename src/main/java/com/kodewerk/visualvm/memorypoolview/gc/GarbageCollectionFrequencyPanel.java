@@ -1,50 +1,54 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ * Copyright (c) 2011-2026, Kirk Pepperdine.
+ *
+ * The contents of this file are subject to the terms of the
+ * Common Development and Distribution License (the "License").
+ * You may not use this file except in compliance with the License.
+ *
+ * You can obtain a copy of the license at http://www.opensource.org/licenses/CDDL-1.0.
+ * See the License for the specific language governing permissions
+ * and limitations under the License.
+ *
+ * When distributing Covered Code, include this CDDL HEADER in each
+ * file and include the License file.
+ * If applicable, add the following below this CDDL HEADER, with the
+ * fields enclosed by brackets "[]" replaced with your own identifying
+ * information: Portions Copyright [yyyy] [name of copyright owner]
  */
 package com.kodewerk.visualvm.memorypoolview.gc;
 
-import com.sun.tools.visualvm.charts.ChartFactory;
-import com.sun.tools.visualvm.charts.SimpleXYChartDescriptor;
-import com.sun.tools.visualvm.charts.SimpleXYChartSupport;
+import org.graalvm.visualvm.charts.ChartFactory;
+import org.graalvm.visualvm.charts.SimpleXYChartDescriptor;
+import org.graalvm.visualvm.charts.SimpleXYChartSupport;
 import java.awt.BorderLayout;
 import javax.swing.JPanel;
 
-/**
- *
- * @author kirk
- */
+/// Swing chart panel for observed garbage-collection frequency.
 class GarbageCollectionFrequencyPanel extends JPanel implements GarbageCollectorModelListener {
-    
-    public final static long ONE_MEGABYTE_SIZE = 1048576;
-    
-    private SimpleXYChartSupport chart;
 
-    public GarbageCollectionFrequencyPanel() {
+    private static final long ONE_MEGABYTE_SIZE = 1048576;
+
+    private final SimpleXYChartSupport chart;
+
+    GarbageCollectionFrequencyPanel() {
         setLayout(new BorderLayout());
-        SimpleXYChartDescriptor description = SimpleXYChartDescriptor.decimal(ONE_MEGABYTE_SIZE, false, 1000);
-        
+        var description = SimpleXYChartDescriptor.decimal(ONE_MEGABYTE_SIZE, false, 1000);
+
         description.addLineItems("GC Frequency");
-        description.setDetailsItems(new String[]{ "Current Frequency" });
-        
-        init( description);
-    }
-    
-    public void init( SimpleXYChartDescriptor description) {
+        description.setDetailsItems(new String[]{"Current Frequency"});
+
         chart = ChartFactory.createSimpleXYChart(description);
         add(chart.getChart(), BorderLayout.CENTER);
     }
-    
-    protected SimpleXYChartSupport getChart() { return chart; }
 
+    /// Adds the latest garbage-collection frequency sample to the chart.
     @Override
     public void garbageCollectorUpdated(GarbageCollectionModel model) {
-        long[] dataPoints = new long[1];
-        dataPoints[0] = (long)model.getFrequency();
+        var frequency = model.getFrequency();
+        var dataPoints = new long[]{frequency};
         chart.addValues(System.currentTimeMillis(), dataPoints);
 
-        String[] details = new String[1];
-        details[0] =  Collection.formatNumber((long)model.getFrequency()) + " collections per second";
-        getChart().updateDetails(details);
-    }    
+        var details = new String[]{Collection.formatNumber(frequency) + " collections per second"};
+        chart.updateDetails(details);
+    }
 }

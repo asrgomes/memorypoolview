@@ -1,97 +1,141 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<artifactId>memorypoolview</artifactId>
-	<groupId>com.kodewerk.visualvm</groupId>
-	<packaging>nbm</packaging>
-	<version>1.0.0</version>
-
-	<properties>
-		<maven.compiler.source>1.7</maven.compiler.source>
-		<maven.compiler.target>1.7</maven.compiler.target>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	</properties>
-
-	<dependencies>
-		<dependency>
-			<groupId>com.sun.tools.visualvm.api</groupId>
-			<artifactId>com-sun-tools-visualvm-tools</artifactId>
-			<version>RELEASE135</version>
-		</dependency>
-		<dependency>
-			<groupId>com.sun.tools.visualvm.api</groupId>
-			<artifactId>com-sun-tools-visualvm-charts</artifactId>
-			<version>RELEASE135</version>
-		</dependency>
-		<dependency>
-			<groupId>com.sun.tools.visualvm.api</groupId>
-			<artifactId>com-sun-tools-visualvm-core</artifactId>
-			<version>RELEASE135</version>
-		</dependency>
-		<dependency>
-			<groupId>com.sun.tools.visualvm.api</groupId>
-			<artifactId>com-sun-tools-visualvm-application</artifactId>
-			<version>RELEASE135</version>
-		</dependency>
-		<dependency>
-			<groupId>com.sun.tools.visualvm.api</groupId>
-			<artifactId>org-openide-util</artifactId>
-			<version>RELEASE135</version>
-		</dependency>
-		<dependency>
-			<groupId>com.sun.tools.visualvm.api</groupId>
-			<artifactId>org-openide-modules</artifactId>
-			<version>RELEASE135</version>
-		</dependency>
-	</dependencies>
-
-	<repositories>
-		<repository>
-			<id>netbeans</id>
-			<url>http://bits.netbeans.org/nexus/content/groups/netbeans/</url>
-			<releases>
-				<enabled>true</enabled>
-			</releases>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</repository>
-		<repository>
-			<id>visualvm</id>
-			<url>http://bits.netbeans.org/nexus/content/groups/visualvm/</url>
-			<releases>
-				<enabled>true</enabled>
-			</releases>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</repository>
-	</repositories>
-
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>nbm-maven-plugin</artifactId>
-				<version>4.1</version>
-				<extensions>true</extensions>
-				<configuration>
-					<author>Kirk Pepperdine</author>
-					<licenseFile>src/main/resources/com/kodewerk/visualvm/memorypoolview/license.txt</licenseFile>
-					<licenseName>COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0</licenseName>
-					<sourceManifestFile>src/main/nbm/manifest.mf</sourceManifestFile>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
-				<version>3.1.0</version>
-				<configuration>
-					<archive>
-						<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-					</archive>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
+<?xml version="1.0"?>
+<!--
+  ~ Copyright (c) 2011-2026, Kirk Pepperdine.
+  ~
+  ~ The contents of this file are subject to the terms of the
+  ~ Common Development and Distribution License (the "License").
+  ~ You may not use this file except in compliance with the License.
+  ~
+  ~ You can obtain a copy of the license at http://www.opensource.org/licenses/CDDL-1.0.
+  ~ See the License for the specific language governing permissions
+  ~ and limitations under the License.
+  ~
+  ~ When distributing Covered Code, include this CDDL HEADER in each
+  ~ file and include the License file.
+  ~ If applicable, add the following below this CDDL HEADER, with the
+  ~ fields enclosed by brackets "[]" replaced with your own identifying
+  ~ information: Portions Copyright [yyyy] [name of copyright owner]
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>memorypoolview</artifactId>
+    <groupId>com.kodewerk.visualvm</groupId>
+    <packaging>nbm</packaging>
+    <version>2.0.0</version>
+    <properties>
+        <maven.compiler.release>25</maven.compiler.release>
+        <visualvm.version>2.2</visualvm.version>
+        <netbeans.version>RELEASE220</netbeans.version>
+        <jspecify.version>1.0.0</jspecify.version>
+        <maven.enforcer.plugin.version>3.6.3</maven.enforcer.plugin.version>
+        <nbm.maven.plugin.version>14.5</nbm.maven.plugin.version>
+        <maven.surefire.plugin.version>3.5.5</maven.surefire.plugin.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+    <dependencies>
+        <!-- VisualVM 2.2.1 publishes API artifacts as 2.2 and uses NetBeans Platform 22. -->
+        <dependency>
+            <groupId>org.graalvm.visualvm.api</groupId>
+            <artifactId>org-graalvm-visualvm-tools</artifactId>
+            <version>${visualvm.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.graalvm.visualvm.api</groupId>
+            <artifactId>org-graalvm-visualvm-charts</artifactId>
+            <version>${visualvm.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.graalvm.visualvm.api</groupId>
+            <artifactId>org-graalvm-visualvm-core</artifactId>
+            <version>${visualvm.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.graalvm.visualvm.api</groupId>
+            <artifactId>org-graalvm-visualvm-application</artifactId>
+            <version>${visualvm.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-openide-util</artifactId>
+            <version>${netbeans.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-openide-util-ui</artifactId>
+            <version>${netbeans.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-openide-modules</artifactId>
+            <version>${netbeans.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jspecify</groupId>
+            <artifactId>jspecify</artifactId>
+            <version>${jspecify.version}</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>${maven.enforcer.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>enforce-build-runtime</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <version>[3.9.15,)</version>
+                                </requireMavenVersion>
+                                <requireJavaVersion>
+                                    <version>[25,)</version>
+                                </requireJavaVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.15.0</version>
+                <configuration>
+                    <release>${maven.compiler.release}</release>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.netbeans.utilities</groupId>
+                <artifactId>nbm-maven-plugin</artifactId>
+                <version>${nbm.maven.plugin.version}</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <author>Kirk Pepperdine</author>
+                    <licenseFile>src/main/resources/com/kodewerk/visualvm/memorypoolview/license.txt</licenseFile>
+                    <licenseName>COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0</licenseName>
+                    <sourceManifestFile>src/main/nbm/manifest.mf</sourceManifestFile>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven.surefire.plugin.version}</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.5.0</version>
+                <configuration>
+                    <archive>
+                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+                    </archive>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

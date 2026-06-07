@@ -15,11 +15,7 @@
  * fields enclosed by brackets "[]" replaced with your own identifying
  * information: Portions Copyright [yyyy] [name of copyright owner]
  */
+@NullMarked
+package com.kodewerk.visualvm.memorypoolview.gc.arithmetic;
 
-package com.kodewerk.visualvm.memorypoolview;
-
-/// Listener notified after a memory-pool model refreshes.
-interface MemoryPoolModelListener {
-    /// Handles a new memory-pool sample.
-    void memoryPoolUpdated(MemoryPoolModel model);
-}
+import org.jspecify.annotations.NullMarked;

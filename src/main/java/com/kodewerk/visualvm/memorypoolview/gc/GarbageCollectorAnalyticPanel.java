@@ -1,43 +1,62 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ * Copyright (c) 2011-2026, Kirk Pepperdine.
+ *
+ * The contents of this file are subject to the terms of the
+ * Common Development and Distribution License (the "License").
+ * You may not use this file except in compliance with the License.
+ *
+ * You can obtain a copy of the license at http://www.opensource.org/licenses/CDDL-1.0.
+ * See the License for the specific language governing permissions
+ * and limitations under the License.
+ *
+ * When distributing Covered Code, include this CDDL HEADER in each
+ * file and include the License file.
+ * If applicable, add the following below this CDDL HEADER, with the
+ * fields enclosed by brackets "[]" replaced with your own identifying
+ * information: Portions Copyright [yyyy] [name of copyright owner]
  */
 package com.kodewerk.visualvm.memorypoolview.gc;
 
-import static com.kodewerk.visualvm.memorypoolview.gc.GarbageCollectorDurationPanel.ONE_MEGABYTE_SIZE;
-import com.sun.tools.visualvm.charts.SimpleXYChartDescriptor;
-import java.awt.BorderLayout;
+import org.graalvm.visualvm.charts.SimpleXYChartDescriptor;
 
-/**
- *
- * @author kirk
- */
+import static com.kodewerk.visualvm.memorypoolview.gc.GarbageCollectorDurationPanel.ONE_MEGABYTE_SIZE;
+
+/// GC duration chart panel that adds the analytic indicator series.
 public class GarbageCollectorAnalyticPanel extends GarbageCollectorDurationPanel {
-    
+
+    /// Creates a duration chart with an indicator line.
     public GarbageCollectorAnalyticPanel() {
-        setLayout(new BorderLayout());
-        SimpleXYChartDescriptor description = SimpleXYChartDescriptor.decimal(ONE_MEGABYTE_SIZE, false, 1000);
+        super(createAnalyticDescriptor());
+    }
+
+    private static SimpleXYChartDescriptor createAnalyticDescriptor() {
+        var description = SimpleXYChartDescriptor.decimal(ONE_MEGABYTE_SIZE, false, 1000);
 
         description.addLineItems("Last GC duration");
         description.addLineItems("Indicator (sample size: " + GarbageCollectorAnalyticModel.MOVING_AVERAGE_PERIOD + ")");
         description.setDetailsItems(new String[]{"Last duration", "Number of collections", "Total time in GC",
                 "Indicator"});
-        
-        super.init( description);
+        return description;
     }
-    
+
+    /// Adds the latest duration and indicator samples to the chart.
     @Override
     public void garbageCollectorUpdated(GarbageCollectionModel model) {
-        long[] dataPoints = new long[2];
-        dataPoints[0] = model.getLastDuration();
-        dataPoints[1] = ((GarbageCollectorAnalyticModel)model).getMovingAverage();
+        if (!(model instanceof GarbageCollectorAnalyticModel analyticModel)) {
+            super.garbageCollectorUpdated(model);
+            return;
+        }
+
+        var movingAverage = analyticModel.getMovingAverage();
+        var dataPoints = new long[]{model.getLastDuration(), movingAverage};
         super.getChart().addValues(System.currentTimeMillis(), dataPoints);
 
-        String[] details = new String[4];
-        details[0] = Collection.formatNumber(model.getLastDuration()) + " ms";
-        details[1] = String.valueOf(model.getCount());
-        details[2] = Collection.formatNumber(model.getTotalDuration()) + " ms";
-        details[3] = String.valueOf(((GarbageCollectorAnalyticModel)model).getMovingAverage());
+        var details = new String[]{
+                Collection.formatNumber(model.getLastDuration()) + " ms",
+                String.valueOf(model.getCount()),
+                Collection.formatNumber(model.getTotalDuration()) + " ms",
+                String.valueOf(movingAverage)
+        };
         getChart().updateDetails(details);
-    }    
+    }
 }

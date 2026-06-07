@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2013, Kirk Pepperdine.
+ * Copyright (c) 2011-2026, Kirk Pepperdine.
  *
  * The contents of this file are subject to the terms of the
  * Common Development and Distribution License (the "License").
@@ -18,12 +18,17 @@
 
 package com.kodewerk.visualvm.memorypoolview;
 
-import com.sun.tools.visualvm.tools.jmx.CachedMBeanServerConnectionFactory;
-import com.sun.tools.visualvm.tools.jmx.JmxModel;
-import com.sun.tools.visualvm.tools.jmx.MBeanCacheListener;
+import org.graalvm.visualvm.tools.jmx.CachedMBeanServerConnectionFactory;
+import org.graalvm.visualvm.tools.jmx.JmxModel;
+import org.graalvm.visualvm.tools.jmx.MBeanCacheListener;
 import org.openide.util.Exceptions;
 
-import javax.management.*;
+import javax.management.AttributeNotFoundException;
+import javax.management.InstanceNotFoundException;
+import javax.management.MBeanException;
+import javax.management.MBeanServerConnection;
+import javax.management.ObjectName;
+import javax.management.ReflectionException;
 import javax.management.openmbean.CompositeData;
 import java.io.IOException;
 import java.lang.management.MemoryUsage;
@@ -31,51 +36,64 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-/**
- * @author kirk
- */
+/// Live model for one `MemoryPoolMXBean`.
+///
+/// Instances subscribe to VisualVM's cached JMX connection and notify registered
+/// chart panels whenever fresh memory-usage data is available.
 public class MemoryPoolModel implements MBeanCacheListener {
 
-    private final Set<MemoryPoolModelListener> listeners = new HashSet<MemoryPoolModelListener>();
+    private static final MemoryUsage UNKNOWN_MEMORY_USAGE = new MemoryUsage(0, 0, 0, -1);
+
+    private final Set<MemoryPoolModelListener> listeners = new HashSet<>();
     private final String name;
     private final String type;
     private final ObjectName mbeanName;
     private final MBeanServerConnection mbeanServerConnection;
 
-    private MemoryUsage memoryUsage;
+    private MemoryUsage memoryUsage = UNKNOWN_MEMORY_USAGE;
 
+    /// Creates a model for the supplied memory-pool MBean and registers it for
+    /// cached JMX refresh notifications.
     public MemoryPoolModel(final ObjectName mbeanName, final JmxModel model, final MBeanServerConnection mbeanServerConnection) throws MBeanException, AttributeNotFoundException, InstanceNotFoundException, ReflectionException, IOException {
         this.mbeanName = mbeanName;
         this.mbeanServerConnection = mbeanServerConnection;
         CachedMBeanServerConnectionFactory.getCachedMBeanServerConnection(model, 2000).addMBeanCacheListener(this);
-        name = mbeanServerConnection.getAttribute(mbeanName, "Name").toString();
-        type = mbeanServerConnection.getAttribute(mbeanName, "Type").toString();
+        name = attributeText("Name", fallbackName(mbeanName));
+        type = attributeText("Type", "unknown");
+        memoryUsage = readMemoryUsage();
     }
 
+    /// Returns the display name reported by the target JVM.
     public String getName() {
-        return this.name;
+        return name;
     }
 
+    /// Returns the memory-pool type reported by the target JVM.
     public String getType() {
-        return this.type;
+        return type;
     }
 
+    /// Returns the currently committed byte count.
     public long getCommitted() {
-        return this.memoryUsage.getCommitted();
+        return memoryUsage.getCommitted();
     }
 
+    /// Returns the configured maximum byte count, or `-1` when undefined.
     public long getMax() {
-        return this.memoryUsage.getMax();
+        return memoryUsage.getMax();
     }
 
+    /// Returns the currently used byte count.
     public long getUsed() {
-        return this.memoryUsage.getUsed();
+        return memoryUsage.getUsed();
     }
 
+    /// Registers a listener that should receive model refresh events.
     public void registerView(MemoryPoolModelListener listener) {
         listeners.add(listener);
     }
 
+    /// Returns an iterator over the currently registered listeners.
     public Iterator<MemoryPoolModelListener> views() {
         return listeners.iterator();
     }
@@ -86,22 +104,38 @@ public class MemoryPoolModel implements MBeanCacheListener {
         }
     }
 
+    /// Refreshes memory usage from JMX and notifies listeners.
     @Override
     public void flushed() {
         try {
-            CompositeData poolStatistics = (CompositeData) mbeanServerConnection.getAttribute(mbeanName, "Usage");
-            if (poolStatistics != null) {
-                memoryUsage = MemoryUsage.from(poolStatistics);
-                tickleListeners();
-            }
+            memoryUsage = readMemoryUsage();
+            tickleListeners();
         } catch (Throwable t) {
-            Exceptions.attachMessage(t, "Exception recovering data from MemoryPoolMXBean ");
+            Exceptions.printStackTrace(Exceptions.attachMessage(t, "Exception recovering data from MemoryPoolMXBean"));
         }
     }
 
+    private MemoryUsage readMemoryUsage() throws MBeanException, AttributeNotFoundException, InstanceNotFoundException, ReflectionException, IOException {
+        if (mbeanServerConnection.getAttribute(mbeanName, "Usage") instanceof CompositeData poolStatistics) {
+            return MemoryUsage.from(poolStatistics);
+        }
+        return UNKNOWN_MEMORY_USAGE;
+    }
+
+    private String attributeText(String attributeName, String fallback) throws MBeanException, AttributeNotFoundException, InstanceNotFoundException, ReflectionException, IOException {
+        var value = mbeanServerConnection.getAttribute(mbeanName, attributeName);
+        return value == null ? fallback : value.toString();
+    }
+
+    private static String fallbackName(ObjectName mbeanName) {
+        var keyPropertyName = mbeanName.getKeyProperty("name");
+        return keyPropertyName == null ? mbeanName.getCanonicalName() : keyPropertyName;
+    }
+
+    /// Returns a concise diagnostic string with name, type, used, and committed bytes.
     @Override
     public String toString() {
-        StringBuilder buffer = new StringBuilder(this.getName());
+        var buffer = new StringBuilder(getName());
         buffer.append(" : ").append(this.getType());
         buffer.append(" : ").append(this.getUsed()).append(" : ").append(this.getCommitted());
         return buffer.toString();
